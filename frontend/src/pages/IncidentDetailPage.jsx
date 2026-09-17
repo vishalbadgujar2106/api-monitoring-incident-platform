@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { KpiBlock } from '../components/KpiBlock.jsx';
 import { StatusDot } from '../components/StatusDot.jsx';
-import { getIncident } from '../api/incidents.js';
+import { analyzeIncident, getIncident } from '../api/incidents.js';
 import { usePolling } from '../hooks/usePolling.js';
 import { formatClockTime, formatDuration, formatResponseTime } from '../lib/format.js';
 
@@ -178,6 +178,75 @@ function MarkerRow({ tone, label, chipLabel, at, meta }) {
   );
 }
 
+function AiAnalysisPanel({ incidentId }) {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState(null);
+  // V1: analysis is generated on demand and never persisted to Postgres,
+  // so it only lives here for as long as this page is open — a refresh
+  // or navigating away loses it, and re-running calls the AI again.
+  const [analysis, setAnalysis] = useState(null);
+  const [lastIncidentId, setLastIncidentId] = useState(incidentId);
+
+  // Adjust state during render rather than in an effect (avoids an extra
+  // render pass) if the panel is ever reused for a different incident
+  // without unmounting.
+  if (incidentId !== lastIncidentId) {
+    setLastIncidentId(incidentId);
+    setAnalysis(null);
+    setError(null);
+  }
+
+  const hasAnalysis = Boolean(analysis);
+
+  async function handleAnalyze() {
+    setIsAnalyzing(true);
+    setError(null);
+    try {
+      const result = await analyzeIncident(incidentId);
+      setAnalysis({ rootCauseSummary: result.rootCauseSummary, suggestedSteps: result.suggestedSteps });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  return (
+    <section className="panel ai-analysis-panel">
+      <header className="panel__header">
+        <h2>AI Incident Analysis</h2>
+        <div className="panel__header-actions">
+          <button type="button" className="btn btn--primary" onClick={handleAnalyze} disabled={isAnalyzing}>
+            {isAnalyzing ? 'Analyzing…' : hasAnalysis ? 'Re-analyze' : 'Analyze with AI'}
+          </button>
+        </div>
+      </header>
+
+      {error && <p className="banner banner--error">Couldn't run AI analysis. {error}</p>}
+
+      {!hasAnalysis && !error && (
+        <p className="empty-state">
+          No analysis yet — run it to get a likely root cause and suggested next steps from this
+          incident's health-check history. Analysis is generated on demand and isn't saved.
+        </p>
+      )}
+
+      {hasAnalysis && (
+        <div className="ai-analysis-panel__body">
+          <div className="ai-analysis-panel__section">
+            <h3>Likely root cause</h3>
+            <p>{analysis.rootCauseSummary}</p>
+          </div>
+          <div className="ai-analysis-panel__section">
+            <h3>Suggested next steps</h3>
+            <p className="ai-analysis-panel__steps">{analysis.suggestedSteps}</p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function IncidentDetailPage({ incidentId, onBack, onOpenService }) {
   const [isGrouped, setIsGrouped] = useState(true);
 
@@ -266,6 +335,8 @@ export function IncidentDetailPage({ incidentId, onBack, onOpenService }) {
           <KpiBlock label="Failure Count" value={incident.failureCount} />
         </div>
       </section>
+
+      <AiAnalysisPanel incidentId={incident.id} />
 
       <section className={`panel incident-panel ${isOpen ? 'incident-panel--alert' : ''}`}>
         <header className="panel__header">
