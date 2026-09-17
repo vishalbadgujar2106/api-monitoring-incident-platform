@@ -87,6 +87,19 @@ export async function findIncidentById(id) {
   return rows[0] || null;
 }
 
+// Full incident history for one service, newest first — used by the
+// service detail view (recent incidents list + windowed for the trend
+// chart's incident-count buckets).
+export async function findIncidentsByServiceId(serviceId) {
+  const { rows } = await pool.query(
+    `SELECT ${SELECT_COLUMNS} FROM incidents
+     WHERE service_id = $1
+     ORDER BY started_at DESC`,
+    [serviceId],
+  );
+  return rows;
+}
+
 export async function findOpenIncidentByServiceId(serviceId) {
   const { rows } = await pool.query(
     `SELECT ${SELECT_COLUMNS} FROM incidents

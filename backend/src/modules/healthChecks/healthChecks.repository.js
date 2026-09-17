@@ -43,3 +43,28 @@ export async function findHealthChecksAroundWindow({ serviceId, startedAt, resol
   );
   return rows;
 }
+
+// Most recent N checks for one service, for a "recent activity" list.
+export async function findRecentHealthChecksForService(serviceId, limit = 20) {
+  const { rows } = await pool.query(
+    `SELECT ${SELECT_COLUMNS} FROM health_checks
+     WHERE service_id = $1
+     ORDER BY checked_at DESC
+     LIMIT $2`,
+    [serviceId, limit],
+  );
+  return rows;
+}
+
+// All checks for one service since a given time, chronological — feeds the
+// same bucketing function the dashboard-wide metrics endpoint uses.
+export async function findHealthChecksForServiceSince(serviceId, windowStart) {
+  const { rows } = await pool.query(
+    `SELECT status, response_time_ms AS "responseTimeMs", checked_at AS "checkedAt"
+     FROM health_checks
+     WHERE service_id = $1 AND checked_at >= $2
+     ORDER BY checked_at ASC`,
+    [serviceId, windowStart],
+  );
+  return rows;
+}
