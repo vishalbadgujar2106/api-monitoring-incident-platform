@@ -40,3 +40,27 @@ export async function getDashboardSummary() {
     averageUptime24h: averageUptimeRaw === null ? null : Number(averageUptimeRaw),
   };
 }
+
+// Raw rows for the requested window — bucketing/aggregation happens in
+// metricsBuckets.js, not here, so this stays a plain SQL fetch.
+export async function findHealthChecksSince(windowStart) {
+  const { rows } = await pool.query(
+    `SELECT status, response_time_ms AS "responseTimeMs", checked_at AS "checkedAt"
+     FROM health_checks
+     WHERE checked_at >= $1
+     ORDER BY checked_at ASC`,
+    [windowStart],
+  );
+  return rows;
+}
+
+export async function findIncidentsStartedSince(windowStart) {
+  const { rows } = await pool.query(
+    `SELECT started_at AS "startedAt"
+     FROM incidents
+     WHERE started_at >= $1
+     ORDER BY started_at ASC`,
+    [windowStart],
+  );
+  return rows;
+}
