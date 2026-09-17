@@ -1,4 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+// Dev falls back to the local backend; a production build must set
+// VITE_API_BASE_URL at build time — falling back to localhost there would
+// silently point the deployed frontend at nothing.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? null : 'http://localhost:4000');
+
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL must be set for production builds.');
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {

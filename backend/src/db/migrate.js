@@ -2,7 +2,15 @@ import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import pool from '../config/db.js';
+
+if (!process.env.DATABASE_URL) {
+  console.error(
+    'Cannot run migrations: DATABASE_URL is not set. Copy backend/.env.example to backend/.env and configure it.',
+  );
+  process.exit(1);
+}
+
+const { default: pool } = await import('../config/db.js');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(__dirname, 'migrations');
