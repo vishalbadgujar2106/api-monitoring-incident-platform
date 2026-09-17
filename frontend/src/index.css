@@ -1509,3 +1509,33 @@ select {
     flex-wrap: wrap;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* AI incident analysis                                                   */
+/* ---------------------------------------------------------------------- */
+
+.ai-analysis-panel__body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-analysis-panel__section h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ai-analysis-panel__section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ai-analysis-panel__steps {
+  white-space: pre-line;
+}

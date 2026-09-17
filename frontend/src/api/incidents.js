@@ -1,4 +1,4 @@
-import { get } from './client.js';
+import { get, post } from './client.js';
 
 export function listIncidents(status) {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
@@ -7,4 +7,8 @@ export function listIncidents(status) {
 
 export function getIncident(id) {
   return get(`/api/incidents/${id}`);
+}
+
+export function analyzeIncident(id) {
+  return post(`/api/incidents/${id}/analyze`);
 }
