@@ -16,29 +16,49 @@ const RANGE_LABEL = {
   all: 'all time',
 };
 
-function TimelineEntry({ incident, now }) {
+function TimelineEntry({ incident, now, onOpenIncident }) {
   const isOpen = incident.status === 'open';
   const endTime = incident.resolvedAt ? new Date(incident.resolvedAt).getTime() : now;
   const durationMs = endTime - new Date(incident.startedAt).getTime();
 
+  const body = (
+    <>
+      <div className="timeline-entry__row">
+        <span className="timeline-entry__service">{incident.service?.name ?? incident.serviceId}</span>
+        <span className={`chip chip--${incident.status}`}>{isOpen ? 'OPEN' : 'RESOLVED'}</span>
+      </div>
+      <span className="timeline-entry__meta">
+        {formatClockTime(incident.startedAt)} · {incident.failureCount} failure
+        {incident.failureCount === 1 ? '' : 's'} · {isOpen ? 'ongoing' : 'mttr'} {formatDuration(durationMs)}
+      </span>
+    </>
+  );
+
   return (
     <li className={`timeline-entry timeline-entry--${incident.status}`}>
       <span className="timeline-entry__rail" aria-hidden="true" />
-      <div className="timeline-entry__content">
-        <div className="timeline-entry__row">
-          <span className="timeline-entry__service">{incident.service?.name ?? incident.serviceId}</span>
-          <span className={`chip chip--${incident.status}`}>{isOpen ? 'OPEN' : 'RESOLVED'}</span>
-        </div>
-        <span className="timeline-entry__meta">
-          {formatClockTime(incident.startedAt)} · {incident.failureCount} failure
-          {incident.failureCount === 1 ? '' : 's'} · {isOpen ? 'ongoing' : 'mttr'} {formatDuration(durationMs)}
-        </span>
-      </div>
+      {onOpenIncident ? (
+        <button
+          type="button"
+          className="timeline-entry__content timeline-entry__content--link"
+          onClick={() => onOpenIncident(incident)}
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="timeline-entry__content">{body}</div>
+      )}
     </li>
   );
 }
 
-export function IncidentTimeline({ incidents, now, timeRange = 'all', title = 'Incident Activity' }) {
+export function IncidentTimeline({
+  incidents,
+  now,
+  timeRange = 'all',
+  title = 'Incident Activity',
+  onOpenIncident,
+}) {
   const list = incidents ?? [];
   const windowMs = RANGE_MS[timeRange];
   const cutoff = windowMs && now ? now - windowMs : null;
@@ -59,7 +79,7 @@ export function IncidentTimeline({ incidents, now, timeRange = 'all', title = 'I
       ) : (
         <ul className="timeline-entry__list">
           {filtered.map((incident) => (
-            <TimelineEntry key={incident.id} incident={incident} now={now} />
+            <TimelineEntry key={incident.id} incident={incident} now={now} onOpenIncident={onOpenIncident} />
           ))}
         </ul>
       )}

@@ -15,6 +15,7 @@ import { useMetricHistory } from '../hooks/useMetricHistory.js';
 import { usePolling } from '../hooks/usePolling.js';
 import { useTheme } from '../hooks/useTheme.js';
 import { useToast } from '../hooks/useToast.js';
+import { IncidentDetailPage } from './IncidentDetailPage.jsx';
 import { ServiceDetailPage } from './ServiceDetailPage.jsx';
 
 const POLL_INTERVAL_MS = 15000;
@@ -27,6 +28,7 @@ export function DashboardPage() {
   const { theme, setTheme } = useTheme();
 
   const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [selectedIncidentId, setSelectedIncidentId] = useState(null);
   const [editingService, setEditingService] = useState(null);
   const [deletingService, setDeletingService] = useState(null);
   const [pendingServiceId, setPendingServiceId] = useState(null);
@@ -121,8 +123,18 @@ export function DashboardPage() {
     pendingServiceId,
   };
 
+  function handleOpenIncident(incident) {
+    setSelectedIncidentId(incident.id);
+  }
+
+  function handleOpenServiceFromIncident(serviceId) {
+    setSelectedIncidentId(null);
+    setSelectedServiceId(serviceId);
+  }
+
   function handleNavigate(view) {
     setSelectedServiceId(null);
+    setSelectedIncidentId(null);
     setActiveView(view);
   }
 
@@ -147,7 +159,13 @@ export function DashboardPage() {
             <p className="banner banner--error">Unable to reach the API. Retrying automatically…</p>
           )}
 
-          {selectedServiceId ? (
+          {selectedIncidentId ? (
+            <IncidentDetailPage
+              incidentId={selectedIncidentId}
+              onBack={() => setSelectedIncidentId(null)}
+              onOpenService={handleOpenServiceFromIncident}
+            />
+          ) : selectedServiceId ? (
             <ServiceDetailPage
               serviceId={selectedServiceId}
               range={timeRange}
@@ -156,6 +174,7 @@ export function DashboardPage() {
               onToggleActive={handleToggleActive}
               onDelete={handleDeleteRequest}
               onCheckNow={handleCheckNow}
+              onOpenIncident={handleOpenIncident}
               pendingServiceId={pendingServiceId}
             />
           ) : (
@@ -179,6 +198,7 @@ export function DashboardPage() {
                       incidents={incidentsPoll.data}
                       now={incidentsPoll.lastUpdatedAt}
                       timeRange={timeRange}
+                      onOpenIncident={handleOpenIncident}
                     />
                   </div>
                 </>
@@ -199,6 +219,7 @@ export function DashboardPage() {
                   now={incidentsPoll.lastUpdatedAt}
                   timeRange={timeRange}
                   title="All Incidents"
+                  onOpenIncident={handleOpenIncident}
                 />
               )}
 

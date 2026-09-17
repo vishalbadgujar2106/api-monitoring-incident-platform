@@ -649,6 +649,27 @@ select {
   background: var(--down-bg);
 }
 
+.panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.timeline-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.timeline-toggle-btn:hover {
+  text-decoration: underline;
+}
+
 .panel__subtitle {
   padding: 10px 18px 0;
   font-size: 12px;
@@ -934,12 +955,18 @@ select {
   background: var(--unknown);
 }
 
-.timeline-entry--open .timeline-entry__rail::before {
+.timeline-entry--open .timeline-entry__rail::before,
+.timeline-entry--down .timeline-entry__rail::before {
   background: var(--down);
 }
 
-.timeline-entry--resolved .timeline-entry__rail::before {
+.timeline-entry--resolved .timeline-entry__rail::before,
+.timeline-entry--up .timeline-entry__rail::before {
   background: var(--up);
+}
+
+.timeline-entry--unknown .timeline-entry__rail::before {
+  background: var(--unknown);
 }
 
 .timeline-entry__rail::after {
@@ -959,6 +986,22 @@ select {
 .timeline-entry__content {
   padding-bottom: 18px;
   min-width: 0;
+}
+
+.timeline-entry__content--link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0 0 18px;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.timeline-entry__content--link:hover .timeline-entry__service {
+  color: var(--accent);
 }
 
 .timeline-entry__row {
@@ -1004,6 +1047,13 @@ select {
 .timeline-entry__stat--alert {
   color: var(--down);
   font-weight: 600;
+}
+
+.timeline-entry__stat--error {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------------- */

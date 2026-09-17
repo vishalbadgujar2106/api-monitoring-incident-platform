@@ -1,3 +1,4 @@
+import { KpiBlock } from '../components/KpiBlock.jsx';
 import { Sparkline } from '../components/Sparkline.jsx';
 import { StatusDot } from '../components/StatusDot.jsx';
 import { getService } from '../api/services.js';
@@ -18,15 +19,6 @@ const RANGE_LABEL = {
   '24h': 'last 24 hours',
   '7d': 'last 7 days',
 };
-
-function KpiBlock({ label, value, tone }) {
-  return (
-    <div className={`kpi-block ${tone ? `kpi-block--${tone}` : ''}`}>
-      <span className="kpi-block__label">{label}</span>
-      <span className="kpi-block__value">{value}</span>
-    </div>
-  );
-}
 
 function buildPointLabels(series, field, formatValue) {
   return series.map((bucket) => {
@@ -101,7 +93,7 @@ function RecentChecksTable({ checks }) {
   );
 }
 
-function RecentIncidentsList({ incidents, now }) {
+function RecentIncidentsList({ incidents, now, onOpenIncident }) {
   if (incidents === null || incidents === undefined) return <p className="empty-state">Loading…</p>;
   if (incidents.length === 0) {
     return <p className="empty-state">No incidents recorded for this service.</p>;
@@ -114,26 +106,40 @@ function RecentIncidentsList({ incidents, now }) {
         const endTime = incident.resolvedAt ? new Date(incident.resolvedAt).getTime() : now;
         const durationMs = endTime - new Date(incident.startedAt).getTime();
 
+        const body = (
+          <>
+            <div className="timeline-entry__row">
+              <span className="timeline-entry__service">{formatClockTime(incident.startedAt)}</span>
+              <span className={`chip chip--${incident.status}`}>{isOpen ? 'OPEN' : 'RESOLVED'}</span>
+            </div>
+            <div className="timeline-entry__stats">
+              <span className="timeline-entry__stat">
+                {incident.failureCount} failure{incident.failureCount === 1 ? '' : 's'}
+              </span>
+              <span className="timeline-entry__stat-divider" aria-hidden="true">
+                ·
+              </span>
+              <span className={`timeline-entry__stat ${isOpen ? 'timeline-entry__stat--alert' : ''}`}>
+                {isOpen ? 'ongoing' : 'mttr'} {formatDuration(durationMs)}
+              </span>
+            </div>
+          </>
+        );
+
         return (
           <li key={incident.id} className={`timeline-entry timeline-entry--${incident.status}`}>
             <span className="timeline-entry__rail" aria-hidden="true" />
-            <div className="timeline-entry__content">
-              <div className="timeline-entry__row">
-                <span className="timeline-entry__service">{formatClockTime(incident.startedAt)}</span>
-                <span className={`chip chip--${incident.status}`}>{isOpen ? 'OPEN' : 'RESOLVED'}</span>
-              </div>
-              <div className="timeline-entry__stats">
-                <span className="timeline-entry__stat">
-                  {incident.failureCount} failure{incident.failureCount === 1 ? '' : 's'}
-                </span>
-                <span className="timeline-entry__stat-divider" aria-hidden="true">
-                  ·
-                </span>
-                <span className={`timeline-entry__stat ${isOpen ? 'timeline-entry__stat--alert' : ''}`}>
-                  {isOpen ? 'ongoing' : 'mttr'} {formatDuration(durationMs)}
-                </span>
-              </div>
-            </div>
+            {onOpenIncident ? (
+              <button
+                type="button"
+                className="timeline-entry__content timeline-entry__content--link"
+                onClick={() => onOpenIncident(incident)}
+              >
+                {body}
+              </button>
+            ) : (
+              <div className="timeline-entry__content">{body}</div>
+            )}
           </li>
         );
       })}
@@ -149,6 +155,7 @@ export function ServiceDetailPage({
   onToggleActive,
   onDelete,
   onCheckNow,
+  onOpenIncident,
   pendingServiceId,
 }) {
   const detailPoll = usePolling(() => getService(serviceId, range), {
@@ -297,7 +304,11 @@ export function ServiceDetailPage({
               {recentIncidents.length}
             </span>
           </header>
-          <RecentIncidentsList incidents={service.recentIncidents} now={detailPoll.lastUpdatedAt} />
+          <RecentIncidentsList
+            incidents={service.recentIncidents}
+            now={detailPoll.lastUpdatedAt}
+            onOpenIncident={onOpenIncident}
+          />
         </section>
       </div>
     </div>
