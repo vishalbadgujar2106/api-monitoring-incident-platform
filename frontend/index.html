@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>BeaconOps — Monitoring Console</title>
+    <script>
+      // Resolves and applies the theme synchronously, before first paint,
+      // so there's no flash of the wrong theme. src/hooks/useTheme.js takes
+      // over from here once React mounts (persistence, live OS changes).
+      (function () {
+        try {
+          var stored = localStorage.getItem('beaconops-theme');
+          var theme = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var resolved =
+            theme === 'system'
+              ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+              : theme;
+          document.documentElement.setAttribute('data-theme', resolved);
+        } catch (err) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
