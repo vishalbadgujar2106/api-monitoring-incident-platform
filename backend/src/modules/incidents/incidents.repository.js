@@ -13,6 +13,80 @@ const SELECT_COLUMNS = `
   updated_at AS "updatedAt"
 `;
 
+const LIST_SELECT = `
+  i.id,
+  i.service_id AS "serviceId",
+  i.status,
+  i.started_at AS "startedAt",
+  i.resolved_at AS "resolvedAt",
+  i.failure_count AS "failureCount",
+  i.root_cause_summary AS "rootCauseSummary",
+  i.suggested_steps AS "suggestedSteps",
+  i.created_at AS "createdAt",
+  i.updated_at AS "updatedAt",
+  json_build_object(
+    'id', s.id,
+    'name', s.name,
+    'currentStatus', s.current_status
+  ) AS service
+`;
+
+const DETAIL_SELECT = `
+  i.id,
+  i.service_id AS "serviceId",
+  i.status,
+  i.started_at AS "startedAt",
+  i.resolved_at AS "resolvedAt",
+  i.failure_count AS "failureCount",
+  i.root_cause_summary AS "rootCauseSummary",
+  i.suggested_steps AS "suggestedSteps",
+  i.created_at AS "createdAt",
+  i.updated_at AS "updatedAt",
+  json_build_object(
+    'id', s.id,
+    'name', s.name,
+    'url', s.url,
+    'method', s.method,
+    'expectedStatus', s.expected_status,
+    'checkIntervalSeconds', s.check_interval_seconds,
+    'timeoutMs', s.timeout_ms,
+    'isActive', s.is_active,
+    'currentStatus', s.current_status,
+    'lastCheckedAt', s.last_checked_at
+  ) AS service
+`;
+
+export async function findAllIncidents({ status } = {}) {
+  const params = [];
+  let whereClause = '';
+
+  if (status) {
+    params.push(status);
+    whereClause = `WHERE i.status = $${params.length}`;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT ${LIST_SELECT}
+     FROM incidents i
+     JOIN services s ON s.id = i.service_id
+     ${whereClause}
+     ORDER BY i.started_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+export async function findIncidentById(id) {
+  const { rows } = await pool.query(
+    `SELECT ${DETAIL_SELECT}
+     FROM incidents i
+     JOIN services s ON s.id = i.service_id
+     WHERE i.id = $1`,
+    [id],
+  );
+  return rows[0] || null;
+}
+
 export async function findOpenIncidentByServiceId(serviceId) {
   const { rows } = await pool.query(
     `SELECT ${SELECT_COLUMNS} FROM incidents

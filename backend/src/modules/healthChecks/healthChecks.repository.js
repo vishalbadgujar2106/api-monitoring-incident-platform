@@ -26,3 +26,20 @@ export async function createHealthCheck({
   );
   return rows[0];
 }
+
+// Returns health checks for one service within a window around an
+// incident's failure period (started_at..resolved_at, or ..now() if still
+// open), padded on both sides so the surrounding "healthy" checks are
+// visible too.
+export async function findHealthChecksAroundWindow({ serviceId, startedAt, resolvedAt, limit = 50 }) {
+  const { rows } = await pool.query(
+    `SELECT ${SELECT_COLUMNS} FROM health_checks
+     WHERE service_id = $1
+       AND checked_at BETWEEN $2::timestamptz - interval '15 minutes'
+                          AND COALESCE($3::timestamptz, now()) + interval '15 minutes'
+     ORDER BY checked_at ASC
+     LIMIT $4`,
+    [serviceId, startedAt, resolvedAt, limit],
+  );
+  return rows;
+}
