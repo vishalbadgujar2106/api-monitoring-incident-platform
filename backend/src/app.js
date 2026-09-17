@@ -13,7 +13,7 @@ const app = express();
 // there is no wildcard fallback, so a misconfigured deployment fails
 // closed (blocked requests) rather than open (any origin allowed).
 const DEV_ORIGIN = 'http://localhost:5173';
-const allowedOrigins = [DEV_ORIGIN, process.env.FRONTEND_ORIGIN].filter(Boolean);
+const allowedOrigins = [DEV_ORIGIN, process.env.FRONTEND_ORIGIN?.trim()].filter(Boolean);
 
 app.use(
   cors({
