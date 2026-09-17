@@ -2,6 +2,8 @@
 
 A self-hosted API uptime monitor that turns failures into incidents automatically, and can explain what went wrong when you ask it to.
 
+**Live demo:** https://beaconops-chi.vercel.app (frontend on Vercel, backend and Postgres on Render)
+
 ## Why I built this
 
 Most small monitoring projects stop at pinging a URL and showing a green or red dot. What actually makes an incident tool useful is what happens after something breaks: how fast you notice, how much history you have to diagnose it, and whether you can figure out the likely cause without digging through raw logs by hand.
@@ -171,6 +173,16 @@ npm run dev                # http://localhost:5173
 
 Open `http://localhost:5173`, add a service (any `http://` or `https://` URL works, including one that doesn't exist yet, to see a failure), and watch it move through the lifecycle described above.
 
+## Production deployment
+
+BeaconOps runs live, end to end:
+
+- Frontend: [beaconops-chi.vercel.app](https://beaconops-chi.vercel.app), deployed on Vercel
+- Backend: [beaconops-api-wye0.onrender.com](https://beaconops-api-wye0.onrender.com), deployed on Render
+- Database: PostgreSQL, hosted on Render
+
+CORS is configured through `FRONTEND_ORIGIN`, set to the Vercel domain. In this environment, health checks run continuously against the deployed backend, incidents open and resolve on their own, and AI incident analysis works against the live OpenAI integration. The full loop, a service going down, an incident opening, resolving, and getting analyzed, has been tested end to end here.
+
 ## Environment variables
 
 Secrets and per-environment config all come from `.env` files, never from source. No `.env` file is committed anywhere in this repo, only `.env.example` files with placeholder values. `AI_API_KEY` stays on the backend: it's never sent to the frontend and never appears in a response or log line.
@@ -256,7 +268,6 @@ Keeping AI output out of the database was intentional for V1. It avoids stale or
 ## Roadmap
 
 - Containerize the backend and frontend. Docker Compose already covers Postgres.
-- Deploy a live instance. Production-readiness work like CORS rules, environment validation, and hosted-Postgres support is already done.
 - Add automated tests. Everything so far has been tested by hand.
 - Notifications on incident open: email, Slack, or a webhook.
 - A configurable consecutive-failure threshold before opening an incident.
