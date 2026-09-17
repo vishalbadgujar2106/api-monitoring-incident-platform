@@ -58,6 +58,18 @@ export async function findServiceById(id) {
   return rows[0] || null;
 }
 
+// Worker-only read path: services that are active and past their own
+// check_interval_seconds since the last check (or never checked yet).
+export async function findDueServices() {
+  const { rows } = await pool.query(
+    `SELECT ${SELECT_COLUMNS} FROM services
+     WHERE is_active = true
+       AND (last_checked_at IS NULL OR last_checked_at < now() - make_interval(secs => check_interval_seconds))
+     ORDER BY last_checked_at NULLS FIRST`,
+  );
+  return rows;
+}
+
 export async function updateService(id, fields) {
   const setClauses = [];
   const values = [];
